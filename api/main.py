@@ -15,6 +15,7 @@ from typing import Optional
 from fastapi import FastAPI, BackgroundTasks, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from fastapi.staticfiles import StaticFiles
 
 from agents.billing_agent import BillingAgent
 from agents.returns_agent import ReturnsAgent
@@ -262,3 +263,5 @@ async def upload_document(
         filename=final_name,
         message="File saved. Re-indexing started in background.",
     )
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")

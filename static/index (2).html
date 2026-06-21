@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CX_BOT // console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#10151b;
+    --surface:#161e28;
+    --surface-2:#1c2530;
+    --line:#2a3441;
+    --text:#e7ecf2;
+    --muted:#8a93a1;
+    --muted-2:#5d6673;
+    --signal:#9d8cff;
+    --signal-dim:#9d8cff33;
+    --billing:#e8b339;
+    --returns:#54c7d4;
+    --escalation:#e2685a;
+    --ok:#5ed4a3;
+    --radius:10px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #1a2230 0%, transparent 60%),
+      var(--ink);
+    color:var(--text);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .mono{font-family:'IBM Plex Mono', monospace;}
+
+  a{color:var(--signal);}
+
+  /* ---------- shell ---------- */
+  .shell{
+    max-width:1180px;
+    margin:0 auto;
+    padding:20px 20px 40px;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+
+  header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  .brand .mark{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:18px;
+    letter-spacing:0.02em;
+  }
+  .brand .mark .slash{color:var(--signal);}
+  .brand .tag{
+    font-size:12px;
+    color:var(--muted);
+  }
+  .status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--muted-2);
+    box-shadow:0 0 0 0 transparent;
+  }
+  .dot.online{background:var(--ok); box-shadow:0 0 8px 1px var(--ok);}
+  .dot.offline{background:var(--escalation); box-shadow:0 0 8px 1px var(--escalation);}
+
+  .note{
+    font-size:12px;
+    color:var(--muted-2);
+    margin:0 0 18px;
+  }
+
+  /* ---------- layout ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap:18px;
+    flex:1;
+    min-height:0;
+  }
+  @media (max-width: 860px){
+    .grid{grid-template-columns: 1fr;}
+  }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  .panel-head{
+    padding:13px 16px;
+    border-bottom:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .panel-head button{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    cursor:pointer;
+    padding:2px 0;
+  }
+  .panel-head button:hover{color:var(--text);}
+
+  /* ---------- conversation ---------- */
+  #log{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    min-height:320px;
+    max-height:54vh;
+  }
+  .msg{max-width:88%;}
+  .msg.user{align-self:flex-end; max-width:78%;}
+  .bubble{
+    padding:11px 14px;
+    border-radius:var(--radius);
+    line-height:1.5;
+    font-size:14.5px;
+  }
+  .msg.user .bubble{
+    background:var(--signal-dim);
+    border:1px solid #9d8cff55;
+  }
+  .msg.bot .bubble{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+  }
+  .msg.bot .bubble.low-conf{
+    border-color:#e2685a55;
+  }
+  .meta-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:7px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+  }
+  .chip{
+    padding:2px 7px;
+    border-radius:5px;
+    border:1px solid var(--line);
+    color:var(--muted);
+    background:var(--ink);
+  }
+  .chip.agent-billing{color:var(--billing); border-color:#e8b33955;}
+  .chip.agent-returns{color:var(--returns); border-color:#54c7d455;}
+  .chip.agent-escalation{color:var(--escalation); border-color:#e2685a55;}
+  .chip.warn{color:var(--escalation); border-color:#e2685a55;}
+  .chip.hit{color:var(--ok); border-color:#5ed4a355;}
+  .disclaimer{
+    font-size:11.5px;
+    color:var(--muted-2);
+    margin-top:6px;
+    font-style:italic;
+  }
+
+  .sys{
+    align-self:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--muted-2);
+    text-align:center;
+  }
+  .sys.err{color:var(--escalation);}
+
+  .examples{
+    padding:0 16px 14px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .example-chip{
+    font-size:12px;
+    padding:6px 11px;
+    border-radius:999px;
+    border:1px solid var(--line);
+    background:var(--surface-2);
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .example-chip:hover{color:var(--text); border-color:var(--signal);}
+
+  form#composer{
+    display:flex;
+    gap:10px;
+    padding:14px 16px;
+    border-top:1px solid var(--line);
+  }
+  #q{
+    flex:1;
+    background:var(--ink);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--text);
+    padding:11px 13px;
+    font-size:14.5px;
+    font-family:inherit;
+  }
+  #q:focus-visible, .example-chip:focus-visible, .panel-head button:focus-visible{
+    outline:2px solid var(--signal);
+    outline-offset:2px;
+  }
+  button#send{
+    background:var(--signal);
+    color:#15101f;
+    border:none;
+    border-radius:8px;
+    padding:0 18px;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+  }
+  button#send:disabled{opacity:0.5; cursor:default;}
+
+  /* ---------- trace panel ---------- */
+  #trace{
+    padding:16px;
+    overflow-y:auto;
+  }
+  .stage{
+    display:flex;
+    gap:11px;
+    padding:9px 0;
+    border-bottom:1px dashed var(--line);
+  }
+  .stage:last-child{border-bottom:none;}
+  .stage-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--muted-2);
+    width:18px;
+    flex-shrink:0;
+    padding-top:1px;
+  }
+  .stage-body{flex:1;}
+  .stage-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12.5px;
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .stage.active .stage-label{color:var(--text);}
+  .stage.active .stage-num{color:var(--signal);}
+  .stage-icon{
+    width:13px; height:13px;
+    border-radius:50%;
+    border:1.5px solid var(--muted-2);
+    flex-shrink:0;
+    position:relative;
+  }
+  .stage.pending .stage-icon{
+    border-color:var(--muted-2);
+    animation:pulse 1.1s ease-in-out infinite;
+  }
+  .stage.done .stage-icon{
+    border-color:var(--ok);
+    background:var(--ok);
+  }
+  .stage.skip .stage-icon{
+    border-color:var(--signal);
+    background:var(--signal);
+  }
+  @keyframes pulse{
+    0%,100%{opacity:0.35;}
+    50%{opacity:1;}
+  }
+  .stage-detail{
+    font-size:12px;
+    color:var(--muted-2);
+    margin-top:3px;
+    padding-left:21px;
+  }
+  .trace-empty{
+    color:var(--muted-2);
+    font-size:13px;
+    line-height:1.6;
+  }
+  .trace-empty .mono{display:block; margin-top:10px; font-size:11.5px;}
+
+  @media (prefers-reduced-motion: reduce){
+    .stage.pending .stage-icon{animation:none; opacity:0.6;}
+  }
+
+  footer{
+    margin-top:18px;
+    font-size:11.5px;
+    color:var(--muted-2);
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <header>
+    <div class="brand">
+      <span class="mark">CX_BOT<span class="slash">//</span>console</span>
+      <span class="tag">domain-aware multi-agent support, self-hosted</span>
+    </div>
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">checking backend&hellip;</span>
+    </div>
+  </header>
+
+  <p class="note">Routes every question to a billing, returns, or escalation agent, grounds the answer in retrieved policy documents, and scores its own confidence. Running on free-tier hardware — first response may take a few seconds.</p>
+
+  <div class="grid">
+
+    <section class="panel">
+      <div class="panel-head">
+        <span>conversation</span>
+        <button id="clearBtn" type="button">clear session</button>
+      </div>
+
+      <div id="log" aria-live="polite"></div>
+
+      <div class="examples" id="examples">
+        <button class="example-chip" type="button">Why was I charged twice on my last invoice?</button>
+        <button class="example-chip" type="button">Can I return a product I bought 20 days ago?</button>
+        <button class="example-chip" type="button">I've contacted support 3 times and nothing's resolved.</button>
+      </div>
+
+      <form id="composer">
+        <input id="q" type="text" placeholder="Ask a billing, returns, or escalation question…" autocomplete="off" aria-label="Your question">
+        <button id="send" type="submit">Send</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <span>pipeline trace</span>
+      </div>
+      <div id="trace">
+        <p class="trace-empty">
+          Send a question to see the request move through the pipeline — routing decision, retrieval, generation, and confidence scoring, all from the real API response.
+          <span class="mono">redact → route → retrieve → generate → score</span>
+        </p>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>Local LLM (Ollama / Llama 3.2) · Hybrid BM25 + FAISS retrieval · Graph-based multi-hop reasoning · <a href="/docs" target="_blank" rel="noopener">API docs</a></footer>
+
+</div>
+
+<script>
+(function(){
+  const API_BASE = ""; // same-origin; set to e.g. "http://localhost:8000" if serving this file separately from the API
+  const SESSION_KEY = "cxbot_session_id";
+
+  function uuid(){
+    if (crypto.randomUUID) return crypto.randomUUID();
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c=>{
+      const r = Math.random()*16|0, v = c=="x"?r:(r&0x3|0x8);
+      return v.toString(16);
+    });
+  }
+
+  let sessionId = localStorage.getItem(SESSION_KEY);
+  if (!sessionId){
+    sessionId = uuid();
+    localStorage.setItem(SESSION_KEY, sessionId);
+  }
+
+  const log = document.getElementById("log");
+  const form = document.getElementById("composer");
+  const input = document.getElementById("q");
+  const sendBtn = document.getElementById("send");
+  const trace = document.getElementById("trace");
+  const statusDot = document.getElementById("statusDot");
+  const statusText = document.getElementById("statusText");
+  const clearBtn = document.getElementById("clearBtn");
+  const examples = document.getElementById("examples");
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function addSys(text, isErr){
+    const div = document.createElement("div");
+    div.className = "sys" + (isErr ? " err" : "");
+    div.textContent = text;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addUserMsg(text){
+    const wrap = document.createElement("div");
+    wrap.className = "msg user";
+    wrap.innerHTML = `<div class="bubble"></div>`;
+    wrap.querySelector(".bubble").textContent = text;
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addBotMsg(data){
+    const wrap = document.createElement("div");
+    wrap.className = "msg bot";
+    const lowConf = data.low_confidence;
+    const agentClass = "agent-" + (data.agent || "escalation");
+
+    const chips = [];
+    chips.push(`<span class="chip ${agentClass}">${data.agent}</span>`);
+    chips.push(`<span class="chip${lowConf ? " warn" : ""}">confidence ${data.confidence.toFixed(2)}</span>`);
+    if (data.cache_hit) chips.push(`<span class="chip hit">cache hit</span>`);
+    chips.push(`<span class="chip">${data.latency_ms}ms</span>`);
+    if (data.sources && data.sources.length) chips.push(`<span class="chip">${data.sources.length} source${data.sources.length>1?"s":""}</span>`);
+
+    wrap.innerHTML = `
+      <div class="bubble${lowConf ? " low-conf" : ""}"></div>
+      <div class="meta-row">${chips.join("")}</div>
+      ${data.disclaimer ? `<div class="disclaimer"></div>` : ""}
+    `;
+    wrap.querySelector(".bubble").textContent = data.answer;
+    if (data.disclaimer) wrap.querySelector(".disclaimer").textContent = data.disclaimer;
+
+    log.appendChild(wrap);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function renderTraceStages(){
+    return [
+      { key:"redact",   label:"redact pii" },
+      { key:"route",    label:"route" },
+      { key:"cache",    label:"cache lookup" },
+      { key:"retrieve", label:"retrieve + graph expand" },
+      { key:"generate", label:"generate" },
+      { key:"score",    label:"confidence score" },
+    ];
+  }
+
+  function buildTraceSkeleton(){
+    trace.innerHTML = "";
+    const stages = renderTraceStages();
+    stages.forEach((s, i) => {
+      const el = document.createElement("div");
+      el.className = "stage pending";
+      el.dataset.key = s.key;
+      el.innerHTML = `
+        <div class="stage-num">${String(i+1).padStart(2,"0")}</div>
+        <div class="stage-body">
+          <div class="stage-label"><span class="stage-icon"></span><span>${s.label}</span></div>
+          <div class="stage-detail"></div>
+        </div>`;
+      trace.appendChild(el);
+    });
+  }
+
+  function setStage(key, state, detail){
+    const el = trace.querySelector(`.stage[data-key="${key}"]`);
+    if (!el) return;
+    el.className = "stage " + state;
+    if (detail !== undefined){
+      el.querySelector(".stage-detail").textContent = detail;
+    }
+  }
+
+  function wait(ms){
+    return new Promise(res => setTimeout(res, reduceMotion ? 0 : ms));
+  }
+
+  async function playTrace(data){
+    buildTraceSkeleton();
+    await wait(120);
+    setStage("redact", "done", "applied");
+    await wait(220);
+    setStage("route", "done", `routed to ${data.agent}`);
+    await wait(220);
+    if (data.cache_hit){
+      setStage("cache", "skip", "hit — generation skipped");
+      setStage("retrieve", "skip", "—");
+      setStage("generate", "skip", "—");
+    } else {
+      setStage("cache", "done", "miss");
+      await wait(220);
+      setStage("retrieve", "done", `${(data.sources||[]).length} source(s): ${(data.sources||[]).join(", ") || "none"}`);
+      await wait(260);
+      setStage("generate", "done", `${data.latency_ms}ms total request`);
+    }
+    await wait(220);
+    setStage("score", data.low_confidence ? "pending" : "done",
+      `final confidence ${data.confidence.toFixed(4)}${data.low_confidence ? " — below threshold" : ""}`);
+    if (data.low_confidence){
+      const el = trace.querySelector('.stage[data-key="score"]');
+      el.className = "stage done";
+      el.querySelector(".stage-icon").style.borderColor = "var(--escalation)";
+      el.querySelector(".stage-icon").style.background = "var(--escalation)";
+    }
+  }
+
+  async function checkHealth(){
+    try{
+      const res = await fetch(API_BASE + "/health");
+      if (!res.ok) throw new Error();
+      statusDot.className = "dot online";
+      statusText.textContent = "backend online";
+    }catch(e){
+      statusDot.className = "dot offline";
+      statusText.textContent = "backend unreachable";
+    }
+  }
+
+  async function sendQuery(text){
+    addUserMsg(text);
+    input.value = "";
+    sendBtn.disabled = true;
+    input.disabled = true;
+    examples.style.display = "none";
+
+    try{
+      const res = await fetch(API_BASE + "/query", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ session_id: sessionId, query: text })
+      });
+
+      if (!res.ok){
+        const body = await res.text().catch(()=> "");
+        throw new Error(`HTTP ${res.status} ${body}`);
+      }
+
+      const data = await res.json();
+      await playTrace(data);
+      addBotMsg(data);
+    }catch(err){
+      addSys("Couldn't reach the server. The backend may be waking up, or Ollama/Redis may be offline — try again in a few seconds.", true);
+      console.error(err);
+    }finally{
+      sendBtn.disabled = false;
+      input.disabled = false;
+      input.focus();
+      checkHealth();
+    }
+  }
+
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    sendQuery(text);
+  });
+
+  examples.addEventListener("click", (e)=>{
+    const btn = e.target.closest(".example-chip");
+    if (!btn) return;
+    sendQuery(btn.textContent);
+  });
+
+  clearBtn.addEventListener("click", async ()=>{
+    try{
+      await fetch(API_BASE + "/session/" + sessionId, { method:"DELETE" });
+    }catch(e){}
+    log.innerHTML = "";
+    trace.innerHTML = `<p class="trace-empty">Send a question to see the request move through the pipeline.<span class="mono">redact → route → retrieve → generate → score</span></p>`;
+    examples.style.display = "flex";
+    addSys("Session cleared.");
+  });
+
+  checkHealth();
+  input.focus();
+})();
+</script>
+
+</body>
+</html>
