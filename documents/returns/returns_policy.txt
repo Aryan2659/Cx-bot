@@ -1,0 +1,33 @@
+# Returns and Exchanges Policy v3.0
+
+## Section 1: Return Window
+Standard items may be returned within 30 days of delivery.
+Electronics and software licenses must be returned within 14 days, unopened.
+Perishable goods, digital downloads, and personalized items are non-returnable.
+
+## Section 2: Return Eligibility
+Items must be in original, unused condition with all original packaging and tags.
+Damaged items due to customer misuse are not eligible for return.
+Items marked as "Final Sale" are non-returnable and non-exchangeable.
+
+## Section 3: Return Process
+1. Log in to your account and navigate to Order History.
+2. Select the order and click "Initiate Return".
+3. Choose the return reason and preferred resolution (refund or exchange).
+4. Print the prepaid return label (eligible orders only).
+5. Drop off at any authorized carrier location within 7 days.
+
+## Section 4: Refund Timelines
+Once the returned item is received and inspected (3-5 business days):
+- Credit card refunds: 5-7 business days
+- Store credit: issued immediately upon inspection approval
+
+## Section 5: Exchanges
+Exchanges are subject to stock availability.
+Price differences are charged or refunded accordingly.
+Refer to Section 4 for refund timelines on exchange price differences.
+
+## Section 6: Defective Items
+Defective items may be returned at any time within the warranty period (12 months).
+Contact returns@company.com with photos of the defect for expedited processing.
+See Section 3 for the standard return process; defective items skip the eligibility check.

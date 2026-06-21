@@ -1,0 +1,31 @@
+# Escalation and SLA Policy v1.4
+
+## Section 1: Escalation Triggers
+An issue is escalated when:
+- The customer requests to speak with a manager or senior agent.
+- An issue remains unresolved after 2 contact attempts.
+- The transaction value exceeds $500.
+- The customer reports legal, compliance, or safety concerns.
+
+## Section 2: Response SLAs
+Priority 1 (Critical - safety, legal, fraud): Response within 2 hours, resolution within 24 hours.
+Priority 2 (High - unresolved billing/returns over $200): Response within 4 hours, resolution within 48 hours.
+Priority 3 (Standard - general unresolved issues): Response within 1 business day, resolution within 5 business days.
+
+## Section 3: Escalation Process
+1. Escalation agent creates a ticket with full conversation history.
+2. Ticket is assigned to a senior support specialist.
+3. Customer is notified via email with ticket ID and expected response time.
+4. Senior specialist contacts customer via phone or email per SLA.
+
+## Section 4: Compensation Guidelines
+Customers experiencing service failures may be eligible for:
+- Service credit (up to 1 month free for subscription customers).
+- Expedited shipping on next order.
+- Partial refund at manager discretion (up to 25% of order value).
+All compensation requires manager approval. See Section 3 for escalation process.
+
+## Section 5: Regulatory Complaints
+For complaints involving data privacy (GDPR/CCPA), contact our Data Protection Officer at dpo@company.com.
+Financial service complaints must be filed per applicable regulatory guidelines.
+Escalate all regulatory complaints immediately to Priority 1 per Section 2.

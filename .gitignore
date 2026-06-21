@@ -1,0 +1,29 @@
+# Environment
+.env
+venv/
+env/
+*.venv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+
+# Generated/runtime data
+logs/
+faiss_indexes/
+*.jsonl
+
+# Redis
+dump.rdb
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Misc leftovers
+*.old

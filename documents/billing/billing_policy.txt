@@ -1,0 +1,29 @@
+# Billing Policy v2.1
+
+## Section 1: Payment Terms
+All invoices are due within 30 days of the billing date. Late payments incur a 1.5% monthly fee.
+Accepted payment methods: credit card, debit card, bank transfer, PayPal.
+
+## Section 2: Subscription Billing
+Subscriptions are billed on the same date each month (or annually for yearly plans).
+Customers will receive an invoice email 7 days before the billing date.
+If payment fails, a retry is attempted after 3 days. After 3 failed attempts, the account is suspended.
+
+## Section 3: Refund Policy
+Refunds are processed within 5-7 business days to the original payment method.
+Full refunds are available within 14 days of purchase for unused services.
+Partial refunds are calculated pro-rata for early cancellation of annual plans.
+
+## Section 4: Dispute Resolution
+Billing disputes must be raised within 60 days of the invoice date.
+Submit disputes via email to billing@company.com or through the account portal.
+Disputed amounts are placed on hold during investigation (up to 30 business days).
+
+## Section 5: Duplicate Charges
+If you see a duplicate charge, contact billing support immediately with your invoice number.
+Duplicate charges are refunded within 2 business days upon verification.
+See Section 3 for refund timelines.
+
+## Section 6: Tax and VAT
+Applicable taxes are calculated based on the customer's billing address.
+Tax-exempt customers must submit their exemption certificate to billing@company.com.

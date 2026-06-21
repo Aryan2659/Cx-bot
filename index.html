@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CX Bot — Dispatch Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14191d;
+    --surface:#1c2227;
+    --surface-2:#202830;
+    --border:#2a3138;
+    --text:#e8e6e1;
+    --text-dim:#9ba3ab;
+    --text-faint:#5e666e;
+    --accent:#e8a33d;
+    --good:#6fbe8f;
+    --warn:#e8a33d;
+    --bad:#e2685a;
+    --billing:#5fa8d3;
+    --returns:#7cb88f;
+    --escalation:#e2685a;
+    --radius:9px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .display{font-family:'Space Grotesk',sans-serif;}
+
+  /* ---- status bar ---- */
+  .statusbar{
+    display:flex;
+    align-items:center;
+    gap:24px;
+    padding:14px 22px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+    flex-wrap:wrap;
+  }
+  .brand{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:18px;
+    letter-spacing:0.02em;
+    display:flex;
+    align-items:center;
+    gap:9px;
+  }
+  .brand .sub{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:400;
+    font-size:11px;
+    color:var(--text-faint);
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+  }
+  .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--text-faint);
+    flex-shrink:0;
+  }
+  .dot.live{background:var(--good); box-shadow:0 0 0 0 rgba(111,190,143,0.6); animation:pulse 2s infinite;}
+  .dot.down{background:var(--bad);}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(111,190,143,0.5);}
+    70%{box-shadow:0 0 0 7px rgba(111,190,143,0);}
+    100%{box-shadow:0 0 0 0 rgba(111,190,143,0);}
+  }
+  @media (prefers-reduced-motion: reduce){ .dot.live{animation:none;} }
+
+  .statusbar .right{
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .field-label{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--text-faint);
+  }
+  .api-input{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    padding:6px 9px;
+    border-radius:6px;
+    width:200px;
+  }
+  .api-input:focus{outline:1px solid var(--accent); outline-offset:0;}
+  .btn-ghost{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    font-family:'Inter',sans-serif;
+    font-size:12px;
+    padding:6px 12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--text-dim); color:var(--text);}
+  .status-text{font-size:11px; color:var(--text-faint); font-family:'JetBrains Mono',monospace;}
+  .session-id{color:var(--text-dim);}
+
+  /* ---- layout ---- */
+  .console{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:0;
+    max-width:1180px;
+    margin:0 auto;
+  }
+  @media (max-width:820px){
+    .console{grid-template-columns:1fr;}
+  }
+
+  .intake{
+    padding:26px 22px;
+    border-right:1px solid var(--border);
+  }
+  @media (max-width:820px){
+    .intake{border-right:none; border-bottom:1px solid var(--border);}
+  }
+  .eyebrow{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--text-faint);
+    margin-bottom:10px;
+    font-weight:600;
+  }
+  textarea#queryInput{
+    width:100%;
+    min-height:120px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    padding:13px;
+    border-radius:var(--radius);
+    resize:vertical;
+  }
+  textarea#queryInput:focus{outline:1px solid var(--accent); outline-offset:0;}
+  textarea#queryInput::placeholder{color:var(--text-faint);}
+
+  #dispatchBtn{
+    margin-top:12px;
+    width:100%;
+    background:var(--accent);
+    color:#1a1406;
+    border:none;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:11px 14px;
+    border-radius:var(--radius);
+    cursor:pointer;
+    transition:opacity 0.15s ease;
+  }
+  #dispatchBtn:hover{opacity:0.88;}
+  #dispatchBtn:disabled{opacity:0.45; cursor:not-allowed;}
+
+  .hint{
+    margin-top:14px;
+    font-size:12px;
+    color:var(--text-faint);
+    line-height:1.6;
+  }
+  .hint button{
+    background:none;border:none;padding:0;
+    color:var(--text-dim);
+    font-size:12px;
+    text-decoration:underline;
+    text-decoration-color:var(--border);
+    cursor:pointer;
+    display:block;
+    margin-top:6px;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .hint button:hover{color:var(--accent);}
+
+  .session-row{
+    margin-top:24px;
+    padding-top:16px;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11px;
+  }
+
+  .upload-panel{
+    margin-top:22px;
+    padding-top:18px;
+    border-top:1px solid var(--border);
+  }
+  .dropzone{
+    border:1px dashed var(--border);
+    border-radius:var(--radius);
+    padding:18px 12px;
+    text-align:center;
+    font-size:12px;
+    color:var(--text-faint);
+    cursor:pointer;
+    transition:border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .dropzone:hover{border-color:var(--text-dim); color:var(--text-dim);}
+  .dropzone.dragover{border-color:var(--accent); color:var(--accent); background:rgba(232,163,61,0.06);}
+  .upload-status{
+    margin-top:9px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-faint);
+    min-height:14px;
+  }
+  .upload-status.ok{color:var(--good);}
+  .upload-status.bad{color:var(--bad);}
+
+  /* ---- feed ---- */
+  .feed{
+    padding:26px 22px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .empty-state{
+    border:1px dashed var(--border);
+    border-radius:var(--radius);
+    padding:34px 20px;
+    text-align:center;
+    color:var(--text-faint);
+    font-size:13.5px;
+  }
+
+  .progress-card{
+    border:1px solid var(--border);
+    background:var(--surface);
+    border-radius:var(--radius);
+    padding:16px 18px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    color:var(--text-dim);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .spinner{
+    width:12px;height:12px;
+    border:2px solid var(--border);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+    flex-shrink:0;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @media (prefers-reduced-motion: reduce){ .spinner{animation:none;} }
+
+  .ticket-card{
+    border:1px solid var(--border);
+    background:var(--surface);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    position:relative;
+    overflow:hidden;
+    animation:rise 0.28s ease;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+  @media (prefers-reduced-motion: reduce){ .ticket-card{animation:none;} }
+
+  .ticket-card.error{border-color:var(--bad);}
+
+  .ticket-top{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .agent-tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:4px 9px;
+    border-radius:5px;
+    color:#0e1316;
+  }
+  .agent-tag.billing{background:var(--billing);}
+  .agent-tag.returns{background:var(--returns);}
+  .agent-tag.escalation{background:var(--escalation);}
+
+  .gauge-wrap{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    flex:1;
+    min-width:120px;
+  }
+  .gauge-track{
+    flex:1;
+    height:5px;
+    background:var(--surface-2);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .gauge-fill{height:100%; border-radius:3px;}
+  .gauge-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-dim);
+    white-space:nowrap;
+  }
+
+  .low-conf-banner{
+    font-size:11.5px;
+    color:var(--warn);
+    background:rgba(232,163,61,0.1);
+    border:1px solid rgba(232,163,61,0.3);
+    border-radius:6px;
+    padding:6px 10px;
+    margin-bottom:12px;
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  .query-echo{
+    font-size:12px;
+    color:var(--text-faint);
+    margin-bottom:10px;
+  }
+  .query-echo span{color:var(--text-dim);}
+
+  .answer{
+    font-size:14.5px;
+    color:var(--text);
+    white-space:pre-wrap;
+    margin-bottom:6px;
+  }
+  .disclaimer{
+    font-size:11.5px;
+    color:var(--text-faint);
+    font-style:italic;
+    margin-top:8px;
+  }
+
+  .stub-row{
+    position:relative;
+    height:1px;
+    border-top:1px dashed var(--border);
+    margin:16px -20px 14px;
+  }
+  .stub-row::before,.stub-row::after{
+    content:"";
+    position:absolute;
+    top:-8px;
+    width:16px;height:16px;
+    border-radius:50%;
+    background:var(--bg);
+  }
+  .stub-row::before{left:-8px;}
+  .stub-row::after{right:-8px;}
+
+  .ticket-footer{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .ticket-footer .item b{color:var(--text-dim); font-weight:500;}
+  .sources{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .source-chip{
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    border-radius:4px;
+    padding:2px 7px;
+    font-size:10.5px;
+    color:var(--text-dim);
+  }
+  .cache-flag{color:var(--good);}
+</style>
+</head>
+<body>
+
+<div class="statusbar">
+  <div class="brand">
+    CX BOT
+    <span class="dot" id="statusDot"></span>
+    <span class="sub">dispatch console</span>
+  </div>
+  <div class="right">
+    <span class="field-label">api</span>
+    <input class="api-input mono" id="apiBase" value="http://localhost:8000" spellcheck="false">
+    <button class="btn-ghost" id="pingBtn">Check</button>
+    <span class="status-text" id="statusText">checking…</span>
+    <button class="btn-ghost" id="clearBtn">Clear session</button>
+  </div>
+</div>
+
+<div class="console">
+  <div class="intake">
+    <div class="eyebrow">New query</div>
+    <textarea id="queryInput" placeholder="Type a customer query…"></textarea>
+    <button id="dispatchBtn">Dispatch →</button>
+    <div class="hint">
+      Try one of these:
+      <button data-q="Why was I charged twice on my last invoice?">Why was I charged twice on my last invoice?</button>
+      <button data-q="Can I return a product I bought 20 days ago?">Can I return a product I bought 20 days ago?</button>
+      <button data-q="I've contacted support 3 times and my issue is still not resolved. I need to speak with a manager.">I need to speak with a manager — this isn't resolved.</button>
+    </div>
+    <div class="session-row">
+      <span class="field-label">session</span>
+      <span class="mono session-id" id="sessionIdLabel">—</span>
+    </div>
+
+    <div class="upload-panel">
+      <div class="eyebrow">Add a document</div>
+      <select id="uploadDomain" class="api-input mono" style="width:100%; margin-bottom:8px;">
+        <option value="billing">billing</option>
+        <option value="returns">returns</option>
+        <option value="escalation">escalation</option>
+      </select>
+      <div class="dropzone" id="dropzone">
+        <span id="dropzoneText">Drop a .txt or .md file here, or click to browse</span>
+        <input type="file" id="fileInput" accept=".txt,.md" hidden>
+      </div>
+      <div class="upload-status" id="uploadStatus"></div>
+    </div>
+  </div>
+
+  <div class="feed" id="feed">
+    <div class="empty-state" id="emptyState">No tickets yet. Submit a query to see it routed and answered.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function uuid(){
+    if(crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+      var r = Math.random()*16|0, v = c==='x'?r:(r&0x3|0x8);
+      return v.toString(16);
+    });
+  }
+
+  var sessionId = uuid();
+  document.getElementById('sessionIdLabel').textContent = sessionId.slice(0,8);
+
+  var apiInput = document.getElementById('apiBase');
+  var statusDot = document.getElementById('statusDot');
+  var statusText = document.getElementById('statusText');
+  var feed = document.getElementById('feed');
+  var emptyState = document.getElementById('emptyState');
+  var queryInput = document.getElementById('queryInput');
+  var dispatchBtn = document.getElementById('dispatchBtn');
+
+  function apiBase(){
+    return apiInput.value.replace(/\/+$/,'');
+  }
+
+  function setStatus(ok, msg){
+    statusDot.className = 'dot ' + (ok===null ? '' : (ok ? 'live' : 'down'));
+    statusText.textContent = msg;
+  }
+
+  function checkHealth(){
+    setStatus(null, 'checking…');
+    fetch(apiBase() + '/health').then(function(r){
+      if(!r.ok) throw new Error('bad status');
+      return r.json();
+    }).then(function(d){
+      setStatus(true, 'connected · ' + (d.agents||[]).length + ' agents online');
+    }).catch(function(){
+      setStatus(false, 'unreachable');
+    });
+  }
+
+  document.getElementById('pingBtn').addEventListener('click', checkHealth);
+  checkHealth();
+
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    fetch(apiBase() + '/session/' + sessionId, { method:'DELETE' }).catch(function(){});
+    sessionId = uuid();
+    document.getElementById('sessionIdLabel').textContent = sessionId.slice(0,8);
+    feed.innerHTML = '';
+    feed.appendChild(emptyState);
+  });
+
+  document.querySelectorAll('.hint button[data-q]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      queryInput.value = btn.getAttribute('data-q');
+      queryInput.focus();
+    });
+  });
+
+  var STAGES = ['Redacting PII…','Checking cache…','Routing query…','Retrieving context…','Generating answer…'];
+
+  function confidenceColor(c){
+    if(c >= 0.65) return 'var(--good)';
+    if(c >= 0.5) return 'var(--warn)';
+    return 'var(--bad)';
+  }
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function renderTicket(query, data){
+    var card = document.createElement('div');
+    card.className = 'ticket-card';
+    var pct = Math.round((data.confidence||0)*100);
+    var color = confidenceColor(data.confidence||0);
+
+    var sourcesHtml = (data.sources||[]).map(function(s){
+      return '<span class="source-chip">' + escapeHtml(s.split(/[\\/]/).pop()) + '</span>';
+    }).join('');
+
+    card.innerHTML =
+      '<div class="query-echo">Query: <span>' + escapeHtml(query) + '</span></div>' +
+      '<div class="ticket-top">' +
+        '<span class="agent-tag ' + escapeHtml(data.agent||'') + '">' + escapeHtml(data.agent||'unknown') + '</span>' +
+        '<div class="gauge-wrap">' +
+          '<div class="gauge-track"><div class="gauge-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+          '<span class="gauge-label">' + pct + '%</span>' +
+        '</div>' +
+      '</div>' +
+      (data.low_confidence ? '<div class="low-conf-banner">⚠ LOW CONFIDENCE — flagged for review</div>' : '') +
+      '<div class="answer">' + escapeHtml(data.answer||'') + '</div>' +
+      (data.disclaimer ? '<div class="disclaimer">' + escapeHtml(data.disclaimer) + '</div>' : '') +
+      '<div class="stub-row"></div>' +
+      '<div class="ticket-footer">' +
+        '<span class="item"><b>audit</b> ' + escapeHtml((data.audit_id||'').slice(0,8)) + '</span>' +
+        '<span class="item"><b>latency</b> ' + (data.latency_ms!=null ? data.latency_ms+'ms' : '—') + '</span>' +
+        '<span class="item' + (data.cache_hit ? ' cache-flag' : '') + '">' + (data.cache_hit ? '⚡ cache hit' : 'cache miss') + '</span>' +
+        '<span class="sources">' + sourcesHtml + '</span>' +
+      '</div>';
+
+    feed.insertBefore(card, feed.firstChild);
+  }
+
+  function renderError(query, message){
+    var card = document.createElement('div');
+    card.className = 'ticket-card error';
+    card.innerHTML =
+      '<div class="query-echo">Query: <span>' + escapeHtml(query) + '</span></div>' +
+      '<div class="answer">Dispatch failed — ' + escapeHtml(message) + '</div>';
+    feed.insertBefore(card, feed.firstChild);
+  }
+
+  function dispatch(){
+    var q = queryInput.value.trim();
+    if(!q) return;
+    if(emptyState.parentNode) emptyState.remove();
+
+    dispatchBtn.disabled = true;
+    var progress = document.createElement('div');
+    progress.className = 'progress-card';
+    progress.innerHTML = '<div class="spinner"></div><span class="stage-text">' + STAGES[0] + '</span>';
+    feed.insertBefore(progress, feed.firstChild);
+
+    var stageIdx = 0;
+    var stageEl = progress.querySelector('.stage-text');
+    var stageTimer = setInterval(function(){
+      stageIdx = (stageIdx + 1) % STAGES.length;
+      stageEl.textContent = STAGES[stageIdx];
+    }, 1400);
+
+    fetch(apiBase() + '/query', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: sessionId, query: q})
+    }).then(function(r){
+      if(!r.ok) return r.json().then(function(e){ throw new Error(e.detail || ('HTTP ' + r.status)); });
+      return r.json();
+    }).then(function(data){
+      clearInterval(stageTimer);
+      progress.remove();
+      renderTicket(q, data);
+    }).catch(function(err){
+      clearInterval(stageTimer);
+      progress.remove();
+      renderError(q, 'could not reach ' + apiBase() + '. Confirm the server is running and the URL is correct. (' + err.message + ')');
+    }).finally(function(){
+      dispatchBtn.disabled = false;
+    });
+
+    queryInput.value = '';
+  }
+
+  dispatchBtn.addEventListener('click', dispatch);
+  queryInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' && (e.metaKey || e.ctrlKey)){
+      dispatch();
+    }
+  });
+
+  // ---- document upload ----
+  var dropzone = document.getElementById('dropzone');
+  var dropzoneText = document.getElementById('dropzoneText');
+  var fileInput = document.getElementById('fileInput');
+  var uploadDomain = document.getElementById('uploadDomain');
+  var uploadStatus = document.getElementById('uploadStatus');
+
+  dropzone.addEventListener('click', function(){ fileInput.click(); });
+
+  ['dragenter','dragover'].forEach(function(evt){
+    dropzone.addEventListener(evt, function(e){
+      e.preventDefault(); e.stopPropagation();
+      dropzone.classList.add('dragover');
+    });
+  });
+  ['dragleave','drop'].forEach(function(evt){
+    dropzone.addEventListener(evt, function(e){
+      e.preventDefault(); e.stopPropagation();
+      dropzone.classList.remove('dragover');
+    });
+  });
+  dropzone.addEventListener('drop', function(e){
+    var f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) uploadFile(f);
+  });
+  fileInput.addEventListener('change', function(){
+    if(fileInput.files && fileInput.files[0]) uploadFile(fileInput.files[0]);
+    fileInput.value = '';
+  });
+
+  function setUploadStatus(cls, msg){
+    uploadStatus.className = 'upload-status' + (cls ? ' ' + cls : '');
+    uploadStatus.textContent = msg;
+  }
+
+  function uploadFile(file){
+    var ext = '.' + file.name.split('.').pop().toLowerCase();
+    if(ext !== '.txt' && ext !== '.md'){
+      setUploadStatus('bad', 'Only .txt or .md files are supported.');
+      return;
+    }
+    if(file.size > 5 * 1024 * 1024){
+      setUploadStatus('bad', 'File too large — max 5MB.');
+      return;
+    }
+
+    dropzoneText.textContent = 'Uploading ' + file.name + '…';
+    setUploadStatus('', 'Uploading and queuing re-index…');
+
+    var formData = new FormData();
+    formData.append('domain', uploadDomain.value);
+    formData.append('file', file);
+
+    fetch(apiBase() + '/documents/upload', {
+      method:'POST',
+      body: formData
+    }).then(function(r){
+      return r.json().then(function(d){
+        if(!r.ok) throw new Error(d.detail || ('HTTP ' + r.status));
+        return d;
+      });
+    }).then(function(d){
+      dropzoneText.textContent = 'Drop a .txt or .md file here, or click to browse';
+      setUploadStatus('ok', '✓ ' + d.filename + ' added to ' + d.domain + ' — re-indexing in background.');
+    }).catch(function(err){
+      dropzoneText.textContent = 'Drop a .txt or .md file here, or click to browse';
+      setUploadStatus('bad', 'Upload failed — ' + err.message);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
