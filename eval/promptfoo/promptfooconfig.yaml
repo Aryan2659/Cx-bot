@@ -1,0 +1,731 @@
+# CX Bot — PromptFoo Eval Suite
+# 55 test cases: billing (20), returns (20), escalation (10), edge cases (5)
+# Run: npx promptfoo eval --config eval/promptfoo/promptfooconfig.yaml
+
+description: "CX Bot accuracy, hallucination, routing, and latency evaluation"
+
+providers:
+  - id: file://provider.js
+
+# Single pass-through prompt — the actual query is in each test's vars
+prompts:
+  - "{{query}}"
+
+# Default vars applied to all tests unless overridden
+defaultTest:
+  vars:
+    min_confidence: "0.60"
+    max_latency_ms: "8000"   # generous for free-tier CPU; tighten once you have GPU
+  assert:
+    # Every test must have a source citation (hallucination guard)
+    - type: javascript
+      value: |
+        const { assertHasSource } = require('./assertions.js');
+        return assertHasSource({ output, context });
+    # Every test must be under latency threshold
+    - type: javascript
+      value: |
+        const { assertLatency } = require('./assertions.js');
+        return assertLatency({ output, context });
+    # Every test must meet minimum confidence
+    - type: javascript
+      value: |
+        const { assertConfidence } = require('./assertions.js');
+        return assertConfidence({ output, context });
+    # Every test checks for fabricated facts
+    - type: javascript
+      value: |
+        const { assertNoFabricatedFacts } = require('./assertions.js');
+        return assertNoFabricatedFacts({ output, context });
+
+tests:
+
+  # ─────────────────────────────────────────
+  # BILLING — 20 test cases
+  # ─────────────────────────────────────────
+
+  - description: "billing: payment terms — invoice due date"
+    vars:
+      query: "When is my invoice due?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "30 days"
+
+  - description: "billing: late payment fee"
+    vars:
+      query: "What happens if I pay my invoice late?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "1.5%"
+
+  - description: "billing: accepted payment methods"
+    vars:
+      query: "What payment methods do you accept?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "credit card"
+
+  - description: "billing: subscription billing date"
+    vars:
+      query: "When will I be charged for my subscription?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "7 days"
+
+  - description: "billing: failed payment retry"
+    vars:
+      query: "My payment failed. What happens now?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "3 days"
+
+  - description: "billing: account suspension after failed payments"
+    vars:
+      query: "How many failed payments before my account gets suspended?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "3"
+
+  - description: "billing: full refund eligibility window"
+    vars:
+      query: "How long do I have to get a full refund?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "14 days"
+
+  - description: "billing: refund processing time"
+    vars:
+      query: "How long does a refund take to process?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "5-7 business days"
+
+  - description: "billing: dispute window"
+    vars:
+      query: "How long do I have to dispute a charge?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "60 days"
+
+  - description: "billing: dispute email contact"
+    vars:
+      query: "Where do I send a billing dispute?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "billing@company.com"
+
+  - description: "billing: duplicate charge resolution time"
+    vars:
+      query: "I was charged twice. When will I get my money back?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "2 business days"
+
+  - description: "billing: dispute investigation hold"
+    vars:
+      query: "What happens to the disputed amount while my case is being investigated?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "hold"
+
+  - description: "billing: annual plan cancellation refund"
+    vars:
+      query: "I want to cancel my annual plan early. Will I get a refund?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "pro-rata"
+
+  - description: "billing: tax exemption process"
+    vars:
+      query: "How do I apply for tax exemption on my account?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "exemption certificate"
+
+  - description: "billing: invoice notification timing"
+    vars:
+      query: "When will I receive my invoice before the billing date?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "7 days"
+
+  - description: "billing: duplicate charge contact instruction"
+    vars:
+      query: "I see a duplicate charge on my account. What should I do?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "invoice number"
+
+  - description: "billing: bank transfer as payment"
+    vars:
+      query: "Can I pay by bank transfer?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "bank transfer"
+
+  - description: "billing: PayPal acceptance"
+    vars:
+      query: "Do you accept PayPal?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "PayPal"
+
+  - description: "billing: tax calculation basis"
+    vars:
+      query: "How is tax calculated on my invoice?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "billing address"
+
+  - description: "billing: dispute investigation duration"
+    vars:
+      query: "How long does a billing dispute investigation take?"
+      expected_agent: "billing"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "30 business days"
+
+  # ─────────────────────────────────────────
+  # RETURNS — 20 test cases
+  # ─────────────────────────────────────────
+
+  - description: "returns: standard return window"
+    vars:
+      query: "How many days do I have to return a product?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "30 days"
+
+  - description: "returns: electronics return window"
+    vars:
+      query: "Can I return electronics after 20 days?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "14 days"
+
+  - description: "returns: non-returnable items"
+    vars:
+      query: "Can I return a digital download I purchased?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "non-returnable"
+
+  - description: "returns: item condition requirement"
+    vars:
+      query: "What condition does the item need to be in to return it?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "original"
+
+  - description: "returns: damaged by customer not eligible"
+    vars:
+      query: "I accidentally damaged the product. Can I still return it?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "not eligible"
+
+  - description: "returns: final sale items"
+    vars:
+      query: "I bought an item marked final sale. Can I return it?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "non-returnable"
+
+  - description: "returns: how to initiate return"
+    vars:
+      query: "How do I start a return?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "Order History"
+
+  - description: "returns: drop-off deadline after label"
+    vars:
+      query: "How long do I have to drop off my return after printing the label?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "7 days"
+
+  - description: "returns: credit card refund timeline"
+    vars:
+      query: "How long for a refund to appear on my credit card?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "5-7 business days"
+
+  - description: "returns: store credit timeline"
+    vars:
+      query: "How quickly is store credit issued after a return?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "immediately"
+
+  - description: "returns: exchange stock availability"
+    vars:
+      query: "Can I exchange my item for a different size?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "stock availability"
+
+  - description: "returns: defective item warranty period"
+    vars:
+      query: "My product broke after 8 months. Can I return it?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "12 months"
+
+  - description: "returns: defective item contact"
+    vars:
+      query: "Who do I contact for a defective product return?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "returns@company.com"
+
+  - description: "returns: defective items skip eligibility check"
+    vars:
+      query: "Does a defective item need to be in original condition to be returned?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "skip"
+
+  - description: "returns: inspection period before refund"
+    vars:
+      query: "How long does it take to inspect my return before issuing a refund?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "3-5 business days"
+
+  - description: "returns: unopened software license"
+    vars:
+      query: "Can I return a software license I haven't activated yet?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "14 days"
+
+  - description: "returns: perishable goods policy"
+    vars:
+      query: "Can I return food items or perishables?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "non-returnable"
+
+  - description: "returns: personalized items policy"
+    vars:
+      query: "I ordered a personalized item. Can I return it?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "non-returnable"
+
+  - description: "returns: exchange price difference handling"
+    vars:
+      query: "If I exchange for something more expensive, how is the price difference handled?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "charged"
+
+  - description: "returns: return reason selection"
+    vars:
+      query: "What return reasons can I choose from when initiating a return?"
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "return reason"
+
+  # ─────────────────────────────────────────
+  # ESCALATION — 10 test cases
+  # ─────────────────────────────────────────
+
+  - description: "escalation: unresolved after 2 contacts"
+    vars:
+      query: "I've contacted support twice and my issue still isn't resolved. What happens now?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "escalat"
+
+  - description: "escalation: request for manager"
+    vars:
+      query: "I want to speak to a manager."
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "senior"
+
+  - description: "escalation: P1 SLA — critical response time"
+    vars:
+      query: "What is the response time for a critical safety issue?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "2 hours"
+
+  - description: "escalation: P2 SLA — high priority billing"
+    vars:
+      query: "How long until someone responds to a high-priority billing dispute over $200?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "4 hours"
+
+  - description: "escalation: P3 standard SLA"
+    vars:
+      query: "What is the standard resolution time for a general unresolved issue?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "5 business days"
+
+  - description: "escalation: compensation — service credit"
+    vars:
+      query: "What compensation can I get for a service failure?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "service credit"
+
+  - description: "escalation: max partial refund"
+    vars:
+      query: "What is the maximum partial refund I can receive as compensation?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "25%"
+
+  - description: "escalation: GDPR complaint contact"
+    vars:
+      query: "I have a data privacy complaint under GDPR. Who do I contact?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "dpo@company.com"
+
+  - description: "escalation: high-value transaction trigger"
+    vars:
+      query: "My transaction is over $500 and unresolved. What process applies?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "escalat"
+
+  - description: "escalation: ticket notification process"
+    vars:
+      query: "How will I be notified after my issue is escalated?"
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: icontains
+        value: "ticket"
+
+  # ─────────────────────────────────────────
+  # EDGE CASES — 5 test cases
+  # ─────────────────────────────────────────
+
+  - description: "edge: ambiguous billing/returns overlap"
+    vars:
+      query: "I returned an item 10 days ago and still haven't received my refund. Who handles this?"
+    assert:
+      - type: javascript
+        value: |
+          const sources = context?.metadata?.sources ?? [];
+          return {
+            pass: sources.length > 0,
+            score: sources.length > 0 ? 1 : 0,
+            reason: sources.length > 0 ? "Has sources for cross-domain query" : "No sources on cross-domain query"
+          };
+
+  - description: "edge: PII in query — should still answer"
+    vars:
+      query: "My email is test@example.com and I want to know about your return window."
+      expected_agent: "returns"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "30 days"
+
+  - description: "edge: completely out of domain question"
+    vars:
+      query: "What is the capital of France?"
+    assert:
+      - type: javascript
+        value: |
+          // For OOD queries, confidence should be low OR it should be escalated
+          const agent = context?.metadata?.agent;
+          const confidence = context?.metadata?.confidence ?? 1;
+          const handled = agent === "escalation" || confidence < 0.65;
+          return {
+            pass: handled,
+            score: handled ? 1 : 0,
+            reason: handled
+              ? `OOD query correctly handled (agent=${agent}, confidence=${confidence.toFixed(2)})`
+              : `OOD query not flagged (agent=${agent}, confidence=${confidence.toFixed(2)})`
+          };
+
+  - description: "edge: very short query"
+    vars:
+      query: "refund?"
+    assert:
+      - type: javascript
+        value: |
+          // Short queries should still get a valid response, not error
+          return {
+            pass: output.length > 20,
+            score: output.length > 20 ? 1 : 0,
+            reason: output.length > 20 ? "Got meaningful response to short query" : "Response too short"
+          };
+
+  - description: "edge: legal/compliance escalation trigger"
+    vars:
+      query: "I am considering legal action over my unresolved complaint."
+      expected_agent: "escalation"
+    assert:
+      - type: javascript
+        value: |
+          const { assertCorrectAgent } = require('./assertions.js');
+          return assertCorrectAgent({ output, context });
+      - type: contains
+        value: "Priority 1"
+
+# ─────────────────────────────────────────
+# Output config
+# ─────────────────────────────────────────
+outputPath: results/latest.json
+sharing: false
