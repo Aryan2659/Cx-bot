@@ -255,7 +255,37 @@ python eval/prompt_optimizer.py
 0 2 * * * cd /path/to/cx_bot && python eval/auto_eval.py >> logs/eval.log 2>&1
 0 3 * * * cd /path/to/cx_bot && python eval/prompt_optimizer.py >> logs/optimizer.log 2>&1
 ```
+## Deployment Notes
 
+A live demo of this project is deployed on Hugging Face Spaces:
+
+**Live demo:** https://huggingface.co/spaces/rnyx/cx-bot
+
+### Current setup
+
+The demo runs on Hugging Face's free CPU-basic tier as a Docker Space. Free-tier
+Spaces sleep after 48 hours of no traffic, so a scheduled GitHub Actions workflow
+(`.github/workflows/keep-alive.yml`) pings the Space's `/health` endpoint every
+30 minutes to keep it warm and avoid cold starts.
+
+This is a pragmatic choice for a portfolio/demo deployment, not a production
+architecture. It has known limitations:
+
+- **No persistent storage** — the Ollama model (`llama3.2`) is re-pulled on every
+  container restart (redeploys, HF infra restarts), so a genuine restart still
+  causes a slow first request.
+- **No real uptime guarantee** — the keep-alive ping prevents the *inactivity*
+  sleep, but doesn't recover the Space from a crash or a manual pause.
+- **Single instance, no horizontal scaling.**
+
+### What a production deployment would change
+
+- Run on upgraded/paid Space hardware (or a dedicated host), which stays on by
+  default and doesn't depend on an external keep-alive signal.
+- Attach persistent storage so the model and FAISS indexes survive restarts.
+- Add real health-check-based alerting instead of a pass/fail GitHub Action log.
+- Move Redis to a managed instance rather than a container-local service.
+- Add horizontal scaling / replicas if concurrent load is expected.
 ## Troubleshooting
 
 - **Audit log line counts don't match a benchmark's `total_queries`** — the benchmark
